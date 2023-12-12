@@ -1,20 +1,82 @@
-import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QMessageBox
+"""
+Модуль для создания формы создания товара.
+"""
+
 from datetime import datetime
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QMessageBox
 
 class Product:
+    """
+    Класс, представляющий товар.
+
+    Атрибуты:
+    - name: str - Название товара.
+    - quantity: int - Количество товара.
+    - date: str - Дата создания товара.
+    """
+
     def __init__(self, name, quantity, date):
+        """
+        Конструктор класса Product.
+
+        Параметры:
+        - name: str - Название товара.
+        - quantity: int - Количество товара.
+        - date: str - Дата создания товара.
+        """
         self.name = name
         self.quantity = quantity
         self.date = date
 
+class ProductDataHandler:
+    """
+    Класс для обработки данных товара.
+    """
+
+    @staticmethod
+    def create_product(name, quantity):
+        """
+        Создает объект товара на основе введенных данных.
+
+        Параметры:
+        - name: str - Название товара.
+        - quantity: str - Количество товара (в строковом формате).
+
+        Возвращает:
+        - created_product: Product - Объект товара, если создан успешно.
+        - error_message: str - Сообщение об ошибке, если что-то пошло не так.
+        """
+        if not name:
+            return None, 'Введите название товара'
+
+        try:
+            quantity = int(quantity)
+        except ValueError:
+            return None, 'Введите корректное количество товара (целое число)'
+
+        now = datetime.now()
+        date = now.strftime('%Y.%m.%d %H:%M')  # Формат даты и времени
+
+        created_product = Product(name, quantity, date)
+        return created_product, None
+
 class ProductForm(QWidget):
+    """
+    Класс для создания формы создания товара.
+    """
+
     def __init__(self):
+        """
+        Конструктор класса ProductForm.
+        """
         super().__init__()
         self.init_ui()
         self.created_product = None  # Добавляем переменную для хранения созданного товара
 
     def init_ui(self):
+        """
+        Инициализация пользовательского интерфейса.
+        """
         self.setWindowTitle('Создание товара')
         self.setGeometry(300, 300, 300, 200)
 
@@ -35,29 +97,26 @@ class ProductForm(QWidget):
         self.show()
 
     def create_product(self):
+        """
+        Обработка создания товара.
+        """
         name = self.name_input.text()
         quantity_text = self.quantity_input.text()
 
-        if not name:
-            self.show_error_message('Введите название товара')
+        created_product, error_message = ProductDataHandler.create_product(name, quantity_text)
+
+        if error_message:
+            self.show_error_message(error_message)
             return
 
-        try:
-            quantity = int(quantity_text)
-        except ValueError:
-            self.show_error_message('Введите корректное количество товара (целое число)')
-            return
-
-        now = datetime.now()
-        date = now.strftime('%Y.%m.%d %H:%M')  # Формат даты и времени
-
-        # Создаем объект товара
-        self.created_product = Product(name, quantity, date)
-
-        # Для примера, выводим информацию о созданном товаре
-        print(f"Создан товар: {self.created_product.name}, Количество: {self.created_product.quantity}, Дата: {self.created_product.date}")
+        self.created_product = created_product
+        if self.created_product:
+            print(f"Создан товар: {self.created_product.name}, Количество: {self.created_product.quantity}, Дата: {self.created_product.date}")
 
     def show_error_message(self, message):
+        """
+        Отображает окно с сообщением об ошибке.
+        """
         msg = QMessageBox()
         msg.setWindowTitle('Ошибка')
         msg.setText(message)
@@ -65,9 +124,12 @@ class ProductForm(QWidget):
         msg.exec_()
 
 def main():
-    app = QApplication(sys.argv)
-    ex = ProductForm()
-    sys.exit(app.exec_())
+    """
+    Главная функция, запускающая приложение.
+    """
+    app = QApplication([])
+    product_form = ProductForm()
+    app.exec_()
 
 if __name__ == '__main__':
     main()
