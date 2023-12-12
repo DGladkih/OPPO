@@ -1,9 +1,12 @@
-"""
-Модуль для создания формы создания товара.
-"""
-
 from datetime import datetime
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QMessageBox
+import unittest
+
+class ProductCreationError(Exception):
+    """
+    Класс исключения для ошибок создания товара.
+    """
+    pass
 
 class Product:
     """
@@ -44,21 +47,21 @@ class ProductDataHandler:
 
         Возвращает:
         - created_product: Product - Объект товара, если создан успешно.
-        - error_message: str - Сообщение об ошибке, если что-то пошло не так.
         """
-        if not name:
-            return None, 'Введите название товара'
-
         try:
+            if not name:
+                raise ProductCreationError('Введите название товара')
+
             quantity = int(quantity)
+
+            now = datetime.now()
+            date = now.strftime('%Y.%m.%d %H:%M')  # Формат даты и времени
+
+            created_product = Product(name, quantity, date)
+            return created_product
+
         except ValueError:
-            return None, 'Введите корректное количество товара (целое число)'
-
-        now = datetime.now()
-        date = now.strftime('%Y.%m.%d %H:%M')  # Формат даты и времени
-
-        created_product = Product(name, quantity, date)
-        return created_product, None
+            raise ProductCreationError('Введите корректное количество товара (целое число)')
 
 class ProductForm(QWidget):
     """
@@ -103,15 +106,14 @@ class ProductForm(QWidget):
         name = self.name_input.text()
         quantity_text = self.quantity_input.text()
 
-        created_product, error_message = ProductDataHandler.create_product(name, quantity_text)
+        try:
+            created_product = ProductDataHandler.create_product(name, quantity_text)
+            self.created_product = created_product
+            if self.created_product:
+                print(f"Создан товар: {self.created_product.name}, Количество: {self.created_product.quantity}, Дата: {self.created_product.date}")
 
-        if error_message:
-            self.show_error_message(error_message)
-            return
-
-        self.created_product = created_product
-        if self.created_product:
-            print(f"Создан товар: {self.created_product.name}, Количество: {self.created_product.quantity}, Дата: {self.created_product.date}")
+        except ProductCreationError as e:
+            self.show_error_message(str(e))
 
     def show_error_message(self, message):
         """
@@ -123,13 +125,25 @@ class ProductForm(QWidget):
         msg.setIcon(QMessageBox.Critical)
         msg.exec_()
 
-def main():
-    """
-    Главная функция, запускающая приложение.
-    """
+class TestProductCreation(unittest.TestCase):
+
+    def test_valid_product_creation(self):
+        created_product = ProductDataHandler.create_product('Product A', '10')
+        self.assertIsNotNone(created_product)
+
+    def test_invalid_product_creation_no_name(self):
+        with self.assertRaises(ProductCreationError) as context:
+            ProductDataHandler.create_product('', '10')
+        self.assertEqual(str(context.exception), 'Введите название товара')
+
+    def test_invalid_product_creation_invalid_quantity(self):
+        with self.assertRaises(ProductCreationError) as context:
+            ProductDataHandler.create_product('Product B', 'abc')
+        self.assertEqual(str(context.exception), 'Введите корректное количество товара (целое число)')
+
+if __name__ == '__main__':
+    unittest.main(argv=[''], exit=False)
+
     app = QApplication([])
     product_form = ProductForm()
     app.exec_()
-
-if __name__ == '__main__':
-    main()
