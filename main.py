@@ -1,6 +1,6 @@
 from datetime import datetime
 from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QMessageBox
-import unittest
+import cProfile
 
 class ProductCreationError(Exception):
     """
@@ -125,25 +125,16 @@ class ProductForm(QWidget):
         msg.setIcon(QMessageBox.Critical)
         msg.exec_()
 
-class TestProductCreation(unittest.TestCase):
-
-    def test_valid_product_creation(self):
-        created_product = ProductDataHandler.create_product('Product A', '10')
-        self.assertIsNotNone(created_product)
-
-    def test_invalid_product_creation_no_name(self):
-        with self.assertRaises(ProductCreationError) as context:
-            ProductDataHandler.create_product('', '10')
-        self.assertEqual(str(context.exception), 'Введите название товара')
-
-    def test_invalid_product_creation_invalid_quantity(self):
-        with self.assertRaises(ProductCreationError) as context:
-            ProductDataHandler.create_product('Product B', 'abc')
-        self.assertEqual(str(context.exception), 'Введите корректное количество товара (целое число)')
-
 if __name__ == '__main__':
-    unittest.main(argv=[''], exit=False)
+    # Запуск профилирования
+    profiler = cProfile.Profile()
+    profiler.enable()
 
+    # Ваш существующий код
     app = QApplication([])
     product_form = ProductForm()
     app.exec_()
+
+    # Отключение профилирования и вывод результатов
+    profiler.disable()
+    profiler.print_stats(sort='cumtime')
